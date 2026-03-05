@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Avaliação de Liderança</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0d0f14; --surface: #13161e; --surface2: #1a1e29;
+    --border: rgba(255,255,255,0.07); --accent: #c9a96e; --accent2: #e8c98a;
+    --text: #e8e4dc; --muted: #6b7080; --success: #4caf7d;
+  }
+  body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; min-height: 100vh; overflow-x: hidden; }
+  body::before {
+    content: ''; position: fixed; inset: 0;
+    background: radial-gradient(ellipse 80% 60% at 20% 10%, rgba(201,169,110,0.06) 0%, transparent 60%),
+                radial-gradient(ellipse 60% 80% at 80% 90%, rgba(76,175,125,0.04) 0%, transparent 60%);
+    pointer-events: none; z-index: 0;
+  }
+
+  /* PASSWORD SCREEN */
+  #passwordScreen {
+    position: fixed; inset: 0; background: var(--bg); z-index: 9999;
+    display: flex; align-items: center; justify-content: center; padding: 24px;
+  }
+  .password-box {
+    background: var(--surface); border: 1px solid rgba(201,169,110,0.2);
+    border-radius: 24px; padding: 48px 40px; max-width: 400px; width: 100%;
+    text-align: center; animation: fadeUp 0.6s ease both;
+  }
+  .lock-icon { font-size: 48px; display: block; margin-bottom: 20px; }
+  .password-box h2 {
+    font-family: 'Playfair Display', serif; font-size: 28px; margin-bottom: 10px;
+    background: linear-gradient(135deg, #e8e4dc, var(--accent));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .password-box p { color: var(--muted); font-size: 13px; margin-bottom: 28px; line-height: 1.6; }
+  #passwordInput {
+    width: 100%; background: var(--surface2); border: 1.5px solid var(--border);
+    border-radius: 12px; padding: 14px 16px; color: var(--text);
+    font-family: 'DM Sans', sans-serif; font-size: 16px; outline: none;
+    transition: border-color 0.25s; text-align: center; letter-spacing: 4px; margin-bottom: 10px;
+  }
+  #passwordInput:focus { border-color: rgba(201,169,110,0.4); }
+  #passwordInput.shake { animation: shake 0.4s ease; border-color: #e57373; }
+  .password-error { font-size: 12px; color: #e57373; margin-bottom: 16px; min-height: 18px; }
+  .btn-unlock {
+    width: 100%; padding: 14px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #0d0f14; font-family: 'DM Sans', sans-serif; font-size: 15px;
+    font-weight: 600; border: none; border-radius: 12px; cursor: pointer;
+    transition: all 0.25s; box-shadow: 0 4px 20px rgba(201,169,110,0.25);
+  }
+  .btn-unlock:hover { transform: translateY(-1px); box-shadow: 0 6px 28px rgba(201,169,110,0.35); }
+
+  /* MAIN APP */
+  #mainApp { display: none; }
+  .container { position: relative; z-index: 1; max-width: 720px; margin: 0 auto; padding: 60px 24px 100px; }
+  .header { text-align: center; margin-bottom: 56px; animation: fadeDown 0.8s ease both; }
+  .header-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(201,169,110,0.1); border: 1px solid rgba(201,169,110,0.25);
+    border-radius: 100px; padding: 6px 16px; font-size: 11px;
+    letter-spacing: 2px; text-transform: uppercase; color: var(--accent); margin-bottom: 24px;
+  }
+  .header h1 {
+    font-family: 'Playfair Display', serif; font-size: clamp(32px, 6vw, 52px);
+    font-weight: 700; line-height: 1.1; margin-bottom: 16px;
+    background: linear-gradient(135deg, #e8e4dc 0%, #c9a96e 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .header p { color: var(--muted); font-size: 15px; line-height: 1.7; max-width: 480px; margin: 0 auto; }
+  .anon-notice {
+    display: flex; align-items: center; gap: 10px;
+    background: rgba(76,175,125,0.07); border: 1px solid rgba(76,175,125,0.2);
+    border-radius: 12px; padding: 14px 18px; margin-bottom: 40px;
+    animation: fadeDown 0.8s 0.1s ease both;
+  }
+  .anon-notice span { font-size: 13px; color: #7ecfa0; line-height: 1.5; }
+  .progress-bar { height: 3px; background: var(--border); border-radius: 100px; margin-bottom: 48px; overflow: hidden; animation: fadeDown 0.8s 0.2s ease both; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 100px; transition: width 0.5s cubic-bezier(0.4,0,0.2,1); }
+  .step { display: none; animation: fadeUp 0.5s ease both; }
+  .step.active { display: block; }
+  .step-indicator { display: flex; align-items: center; gap: 8px; margin-bottom: 32px; font-size: 12px; color: var(--muted); }
+  .step-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border); transition: all 0.3s; }
+  .step-dot.done { background: var(--accent); }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 32px; margin-bottom: 20px; transition: border-color 0.3s; }
+  .card:hover { border-color: rgba(201,169,110,0.15); }
+  .card-label { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; }
+  .card h2 { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 600; margin-bottom: 24px; color: var(--text); }
+  .leader-grid { display: grid; gap: 10px; }
+  .leader-option {
+    display: flex; align-items: center; gap: 16px; padding: 16px 20px;
+    background: var(--surface2); border: 1.5px solid var(--border);
+    border-radius: 14px; cursor: pointer; transition: all 0.25s; position: relative; overflow: hidden;
+  }
+  .leader-option::before { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(201,169,110,0.06), transparent); opacity: 0; transition: opacity 0.3s; }
+  .leader-option:hover { border-color: rgba(201,169,110,0.3); }
+  .leader-option:hover::before { opacity: 1; }
+  .leader-option.selected { border-color: var(--accent); background: rgba(201,169,110,0.08); }
+  .leader-option.selected::before { opacity: 1; }
+  .leader-avatar {
+    width: 44px; height: 44px; border-radius: 50%;
+    background: linear-gradient(135deg, rgba(201,169,110,0.3), rgba(201,169,110,0.1));
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Playfair Display', serif; font-size: 16px; font-weight: 700;
+    color: var(--accent); flex-shrink: 0; border: 1px solid rgba(201,169,110,0.2);
+  }
+  .leader-name { font-size: 15px; font-weight: 500; color: var(--text); flex: 1; }
+  .leader-check { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--border); display: flex; align-items: center; justify-content: center; transition: all 0.25s; flex-shrink: 0; }
+  .leader-option.selected .leader-check { background: var(--accent); border-color: var(--accent); }
+  .leader-check::after { content: '✓'; font-size: 12px; font-weight: 700; color: #0d0f14; opacity: 0; transition: opacity 0.2s; }
+  .leader-option.selected .leader-check::after { opacity: 1; }
+  .rating-group { margin-bottom: 28px; }
+  .rating-label { font-size: 14px; color: var(--text); margin-bottom: 6px; font-weight: 500; }
+  .rating-desc { font-size: 12px; color: var(--muted); margin-bottom: 12px; }
+  .stars { display: flex; gap: 6px; }
+  .star { font-size: 28px; cursor: pointer; color: var(--border); transition: all 0.15s; line-height: 1; user-select: none; }
+  .star:hover, .star.active { color: var(--accent); transform: scale(1.15); }
+  .star.hover-low { color: #e57373; }
+  .star.hover-mid { color: #ffb74d; }
+  .star.hover-high { color: var(--accent); }
+  .question-group { margin-bottom: 24px; }
+  .question-label { font-size: 14px; font-weight: 500; color: var(--text); margin-bottom: 10px; display: block; }
+  textarea, select {
+    width: 100%; background: var(--surface2); border: 1.5px solid var(--border);
+    border-radius: 12px; padding: 14px 16px; color: var(--text);
+    font-family: 'DM Sans', sans-serif; font-size: 14px; line-height: 1.6;
+    resize: none; transition: border-color 0.25s; outline: none; appearance: none;
+  }
+  textarea:focus, select:focus { border-color: rgba(201,169,110,0.4); }
+  textarea::placeholder { color: var(--muted); }
+  .scale-options { display: flex; gap: 8px; flex-wrap: wrap; }
+  .scale-btn {
+    flex: 1; min-width: 44px; padding: 10px 4px;
+    background: var(--surface2); border: 1.5px solid var(--border);
+    border-radius: 10px; color: var(--muted); font-size: 14px; font-weight: 500;
+    cursor: pointer; transition: all 0.2s; text-align: center; font-family: 'DM Sans', sans-serif;
+  }
+  .scale-btn:hover { border-color: rgba(201,169,110,0.3); color: var(--text); }
+  .scale-btn.selected { background: rgba(201,169,110,0.12); border-color: var(--accent); color: var(--accent); }
+  .scale-labels { display: flex; justify-content: space-between; margin-top: 6px; font-size: 11px; color: var(--muted); }
+  .btn-row { display: flex; gap: 12px; margin-top: 32px; justify-content: flex-end; }
+  .btn { padding: 14px 28px; border-radius: 12px; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; cursor: pointer; border: none; transition: all 0.25s; }
+  .btn-ghost { background: transparent; border: 1.5px solid var(--border); color: var(--muted); }
+  .btn-ghost:hover { border-color: rgba(255,255,255,0.15); color: var(--text); }
+  .btn-primary { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #0d0f14; font-weight: 600; box-shadow: 0 4px 20px rgba(201,169,110,0.25); }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 28px rgba(201,169,110,0.35); }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+  .success-screen { text-align: center; padding: 60px 24px; animation: fadeUp 0.6s ease both; }
+  .success-icon { width: 88px; height: 88px; background: radial-gradient(circle, rgba(76,175,125,0.15), transparent); border: 2px solid rgba(76,175,125,0.3); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 36px; margin: 0 auto 32px; animation: pulse 2s ease infinite; }
+  .success-screen h2 { font-family: 'Playfair Display', serif; font-size: 32px; margin-bottom: 16px; background: linear-gradient(135deg, #e8e4dc, var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .success-screen p { color: var(--muted); font-size: 15px; line-height: 1.7; max-width: 380px; margin: 0 auto 32px; }
+  .btn-restart { background: transparent; border: 1.5px solid var(--border); color: var(--muted); padding: 12px 24px; border-radius: 12px; font-family: 'DM Sans', sans-serif; font-size: 14px; cursor: pointer; transition: all 0.25s; }
+  .btn-restart:hover { border-color: rgba(201,169,110,0.3); color: var(--accent); }
+  .error-msg { font-size: 12px; color: #e57373; margin-top: 8px; display: none; }
+  .error-msg.show { display: block; }
+  @keyframes fadeDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(76,175,125,0.3); } 50% { box-shadow: 0 0 0 16px rgba(76,175,125,0); } }
+  @keyframes shake { 0%, 100% { transform: translateX(0); } 20% { transform: translateX(-8px); } 40% { transform: translateX(8px); } 60% { transform: translateX(-6px); } 80% { transform: translateX(6px); } }
+  @media (max-width: 480px) { .card { padding: 24px 20px; } .star { font-size: 24px; } }
+</style>
+</head>
+<body>
+
+<!-- TELA DE SENHA -->
+<div id="passwordScreen">
+  <div class="password-box">
+    <span class="lock-icon">🔐</span>
+    <h2>Acesso Restrito</h2>
+    <p>Este formulário é exclusivo para colaboradores.<br>Digite a senha para continuar.</p>
+    <input type="password" id="passwordInput" placeholder="••••••••••••" onkeydown="if(event.key==='Enter') checkPassword()" autofocus />
+    <div class="password-error" id="passwordError">&nbsp;</div>
+    <button class="btn-unlock" onclick="checkPassword()">Entrar →</button>
+  </div>
+</div>
+
+<!-- APP PRINCIPAL -->
+<div id="mainApp">
+<div class="container">
+
+  <div class="header">
+    <div class="header-badge"><span>🔒</span><span>Avaliação de Liderança</span></div>
+    <h1>Sua voz importa</h1>
+    <p>Compartilhe seu feedback de forma honesta e construtiva. Suas respostas ajudam a construir uma liderança mais forte.</p>
+  </div>
+
+  <div class="anon-notice">
+    <span>🛡️</span>
+    <span><strong style="color:#7ecfa0">Formulário 100% anônimo.</strong> Nenhum dado de identificação é coletado ou armazenado. Responda com liberdade.</span>
+  </div>
+
+  <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+
+  <div class="step-indicator">
+    <span id="stepText" style="margin-right:4px">Passo 1 de 3</span>
+    <div class="step-dot" id="dot1"></div>
+    <div class="step-dot" id="dot2"></div>
+    <div class="step-dot" id="dot3"></div>
+  </div>
+
+  <!-- PASSO 1 -->
+  <div class="step active" id="step1">
+    <div class="card">
+      <div class="card-label">Passo 01</div>
+      <h2>Quem você deseja avaliar?</h2>
+      <div class="leader-grid" id="leaderGrid"></div>
+      <div class="error-msg" id="leaderError">Por favor, selecione um líder para continuar.</div>
+    </div>
+    <div class="btn-row"><button class="btn btn-primary" onclick="goStep(2)">Continuar →</button></div>
+  </div>
+
+  <!-- PASSO 2 -->
+  <div class="step" id="step2">
+    <div class="card">
+      <div class="card-label">Passo 02 — Avaliação Quantitativa</div>
+      <h2>Como você avalia este líder?</h2>
+      <div class="rating-group">
+        <div class="rating-label">Comunicação e Clareza</div>
+        <div class="rating-desc">O líder se comunica de forma clara, objetiva e transparente?</div>
+        <div class="stars" data-key="comunicacao"><span class="star" data-val="1">★</span><span class="star" data-val="2">★</span><span class="star" data-val="3">★</span><span class="star" data-val="4">★</span><span class="star" data-val="5">★</span></div>
+        <div class="error-msg" id="errComunicacao">Selecione uma avaliação.</div>
+      </div>
+      <div class="rating-group">
+        <div class="rating-label">Reconhecimento e Valorização</div>
+        <div class="rating-desc">Você se sente reconhecido(a) e valorizado(a) pelo seu trabalho?</div>
+        <div class="stars" data-key="reconhecimento"><span class="star" data-val="1">★</span><span class="star" data-val="2">★</span><span class="star" data-val="3">★</span><span class="star" data-val="4">★</span><span class="star" data-val="5">★</span></div>
+        <div class="error-msg" id="errReconhecimento">Selecione uma avaliação.</div>
+      </div>
+      <div class="rating-group">
+        <div class="rating-label">Suporte e Disponibilidade</div>
+        <div class="rating-desc">O líder está disponível quando você precisa de apoio?</div>
+        <div class="stars" data-key="suporte"><span class="star" data-val="1">★</span><span class="star" data-val="2">★</span><span class="star" data-val="3">★</span><span class="star" data-val="4">★</span><span class="star" data-val="5">★</span></div>
+        <div class="error-msg" id="errSuporte">Selecione uma avaliação.</div>
+      </div>
+      <div class="rating-group">
+        <div class="rating-label">Desenvolvimento da Equipe</div>
+        <div class="rating-desc">O líder investe no seu crescimento profissional?</div>
+        <div class="stars" data-key="desenvolvimento"><span class="star" data-val="1">★</span><span class="star" data-val="2">★</span><span class="star" data-val="3">★</span><span class="star" data-val="4">★</span><span class="star" data-val="5">★</span></div>
+        <div class="error-msg" id="errDesenvolvimento">Selecione uma avaliação.</div>
+      </div>
+      <div class="rating-group" style="margin-bottom:0">
+        <div class="rating-label">Tomada de Decisão</div>
+        <div class="rating-desc">As decisões são tomadas de forma justa e bem fundamentada?</div>
+        <div class="stars" data-key="decisao"><span class="star" data-val="1">★</span><span class="star" data-val="2">★</span><span class="star" data-val="3">★</span><span class="star" data-val="4">★</span><span class="star" data-val="5">★</span></div>
+        <div class="error-msg" id="errDecisao">Selecione uma avaliação.</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-label">NPS de Liderança</div>
+      <h2>Em uma escala de 0 a 10, o quanto você recomendaria este líder a um colega?</h2>
+      <div class="scale-options" id="npsOptions"></div>
+      <div class="scale-labels"><span>😞 Nada</span><span>😊 Com certeza</span></div>
+      <div class="error-msg" id="errNps">Por favor, selecione um valor.</div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="goStep(1)">← Voltar</button>
+      <button class="btn btn-primary" onclick="goStep(3)">Continuar →</button>
+    </div>
+  </div>
+
+  <!-- PASSO 3 -->
+  <div class="step" id="step3">
+    <div class="card">
+      <div class="card-label">Passo 03 — Perguntas Abertas</div>
+      <h2>Conte-nos mais</h2>
+      <div class="question-group">
+        <label class="question-label">✅ O que este líder faz muito bem? Quais são seus maiores pontos fortes?</label>
+        <textarea rows="4" id="pontosFortesQ" placeholder="Descreva os comportamentos e atitudes que você mais admira..."></textarea>
+      </div>
+      <div class="question-group">
+        <label class="question-label">🔧 O que poderia ser melhorado? Que mudanças fariam diferença para a equipe?</label>
+        <textarea rows="4" id="melhoriaQ" placeholder="Seja específico(a) e construtivo(a). Seu feedback é valioso..."></textarea>
+      </div>
+      <div class="question-group">
+        <label class="question-label">💡 Se você pudesse dar um conselho a este líder, qual seria?</label>
+        <textarea rows="3" id="conselhoQ" placeholder="Um conselho honesto e direto..."></textarea>
+      </div>
+      <div class="question-group" style="margin-bottom:0">
+        <label class="question-label">📊 Como você classificaria o clima da equipe sob esta liderança?</label>
+        <select id="climaQ">
+          <option value="" disabled selected>Selecione uma opção...</option>
+          <option value="excelente">🌟 Excelente — ambiente muito positivo e motivador</option>
+          <option value="bom">👍 Bom — clima agradável, com pontos a melhorar</option>
+          <option value="neutro">😐 Neutro — nem bom, nem ruim</option>
+          <option value="ruim">👎 Ruim — ambiente tenso ou desmotivante</option>
+          <option value="critico">⚠️ Crítico — situação precisa de atenção urgente</option>
+        </select>
+        <div class="error-msg" id="errClima">Por favor, selecione uma opção.</div>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="goStep(2)">← Voltar</button>
+      <button class="btn btn-primary" id="submitBtn" onclick="submitForm()">Enviar Avaliação ✓</button>
+    </div>
+  </div>
+
+  <!-- SUCESSO -->
+  <div class="step" id="stepSuccess">
+    <div class="success-screen">
+      <div class="success-icon">✓</div>
+      <h2>Obrigado pelo seu feedback!</h2>
+      <p>Sua avaliação foi registrada com sucesso. Ela será usada de forma responsável para fortalecer a liderança da equipe.</p>
+      <button class="btn-restart" onclick="restart()">Fazer outra avaliação</button>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<script>
+  // SENHA
+  function checkPassword() {
+    const val = document.getElementById('passwordInput').value;
+    const input = document.getElementById('passwordInput');
+    const err = document.getElementById('passwordError');
+    if (val === 'eqtlstcgyn26') {
+      document.getElementById('passwordScreen').style.display = 'none';
+      document.getElementById('mainApp').style.display = 'block';
+    } else {
+      err.textContent = 'Senha incorreta. Tente novamente.';
+      input.classList.add('shake');
+      input.value = '';
+      setTimeout(() => input.classList.remove('shake'), 500);
+    }
+  }
+
+  // LÍDERES
+  const leaders = [
+    "Flavio Oliveira Duarte",
+    "Victor Mateus de Morais",
+    "Glaucio de Oliveira Lima",
+    "Felipe da Silva Martins",
+    "Marcos Aurelio de Araujo Cardoso",
+    "Leandro Monteiro Guedes"
+  ];
+
+  const ratings = { comunicacao: 0, reconhecimento: 0, suporte: 0, desenvolvimento: 0, decisao: 0 };
+  let selectedLeader = null;
+  let selectedNps = null;
+
+  // Montar grid de líderes
+  const grid = document.getElementById('leaderGrid');
+  leaders.forEach(name => {
+    const initials = name.split(' ').slice(0,2).map(n => n[0].toUpperCase()).join('');
+    const div = document.createElement('div');
+    div.className = 'leader-option';
+    div.innerHTML = `
+      <div class="leader-avatar">${initials}</div>
+      <div class="leader-name">${name}</div>
+      <div class="leader-check"></div>`;
+    div.onclick = () => {
+      document.querySelectorAll('.leader-option').forEach(el => el.classList.remove('selected'));
+      div.classList.add('selected');
+      selectedLeader = name;
+      document.getElementById('leaderError').classList.remove('show');
+    };
+    grid.appendChild(div);
+  });
+
+  // Montar NPS
+  const npsContainer = document.getElementById('npsOptions');
+  for (let i = 0; i <= 10; i++) {
+    const btn = document.createElement('button');
+    btn.className = 'scale-btn';
+    btn.textContent = i;
+    btn.onclick = () => {
+      document.querySelectorAll('.scale-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      selectedNps = i;
+      document.getElementById('errNps').classList.remove('show');
+    };
+    npsContainer.appendChild(btn);
+  }
+
+  // Estrelas
+  document.querySelectorAll('.stars').forEach(group => {
+    const key = group.dataset.key;
+    const stars = group.querySelectorAll('.star');
+    stars.forEach(star => {
+      star.addEventListener('mouseenter', () => {
+        const val = +star.dataset.val;
+        stars.forEach(s => {
+          s.classList.remove('active','hover-low','hover-mid','hover-high');
+          if (+s.dataset.val <= val) s.classList.add(val <= 2 ? 'hover-low' : val === 3 ? 'hover-mid' : 'hover-high');
+        });
+      });
+      star.addEventListener('mouseleave', () => {
+        stars.forEach(s => {
+          s.classList.remove('hover-low','hover-mid','hover-high');
+          if (+s.dataset.val <= ratings[key]) s.classList.add('active');
+        });
+      });
+      star.addEventListener('click', () => {
+        ratings[key] = +star.dataset.val;
+        stars.forEach(s => { s.classList.remove('active'); if (+s.dataset.val <= ratings[key]) s.classList.add('active'); });
+        const errId = 'err' + key.charAt(0).toUpperCase() + key.slice(1);
+        document.getElementById(errId)?.classList.remove('show');
+      });
+    });
+  });
+
+  function updateProgress(step) {
+    const pct = step === 'success' ? 100 : ((step - 1) / 3) * 100;
+    document.getElementById('progressFill').style.width = pct + '%';
+    for (let i = 1; i <= 3; i++) {
+      const dot = document.getElementById('dot' + i);
+      if (dot) dot.classList.toggle('done', i < step || step === 'success');
+    }
+    document.getElementById('stepText').textContent = step === 'success' ? 'Concluído' : `Passo ${step} de 3`;
+  }
+
+  function showStep(id) {
+    document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+    document.getElementById('step' + id).classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function goStep(n) {
+    if (n === 2 && !selectedLeader) { document.getElementById('leaderError').classList.add('show'); return; }
+    if (n === 3) {
+      let valid = true;
+      ['comunicacao','reconhecimento','suporte','desenvolvimento','decisao'].forEach(key => {
+        if (!ratings[key]) { document.getElementById('err' + key.charAt(0).toUpperCase() + key.slice(1)).classList.add('show'); valid = false; }
+      });
+      if (selectedNps === null) { document.getElementById('errNps').classList.add('show'); valid = false; }
+      if (!valid) return;
+    }
+    updateProgress(n);
+    showStep(n);
+  }
+
+  async function submitForm() {
+    const clima = document.getElementById('climaQ').value;
+    if (!clima) { document.getElementById('errClima').classList.add('show'); return; }
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true; btn.textContent = 'Enviando...';
+    const climaLabels = { excelente: 'Excelente', bom: 'Bom', neutro: 'Neutro', ruim: 'Ruim', critico: 'Crítico' };
+    const payload = {
+      _subject: `Avaliação de Liderança — ${selectedLeader}`,
+      Lider_Avaliado: selectedLeader,
+      Comunicacao_e_Clareza: ratings.comunicacao + ' / 5',
+      Reconhecimento_e_Valorizacao: ratings.reconhecimento + ' / 5',
+      Suporte_e_Disponibilidade: ratings.suporte + ' / 5',
+      Desenvolvimento_da_Equipe: ratings.desenvolvimento + ' / 5',
+      Tomada_de_Decisao: ratings.decisao + ' / 5',
+      NPS_de_Lideranca: selectedNps + ' / 10',
+      Pontos_Fortes: document.getElementById('pontosFortesQ').value || '(não respondido)',
+      Pontos_de_Melhoria: document.getElementById('melhoriaQ').value || '(não respondido)',
+      Conselho_ao_Lider: document.getElementById('conselhoQ').value || '(não respondido)',
+      Clima_da_Equipe: climaLabels[clima],
+      Data_Hora: new Date().toLocaleString('pt-BR')
+    };
+    try {
+      const res = await fetch('https://formspree.io/f/meerjraj', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) { updateProgress('success'); showStep('Success'); }
+      else throw new Error();
+    } catch {
+      btn.disabled = false; btn.textContent = 'Enviar Avaliação ✓';
+      alert('Erro ao enviar. Verifique sua conexão e tente novamente.');
+    }
+  }
+
+  function restart() {
+    selectedLeader = null; selectedNps = null;
+    Object.keys(ratings).forEach(k => ratings[k] = 0);
+    document.querySelectorAll('.leader-option').forEach(el => el.classList.remove('selected'));
+    document.querySelectorAll('.scale-btn').forEach(b => b.classList.remove('selected'));
+    document.querySelectorAll('.star').forEach(s => s.classList.remove('active','hover-low','hover-mid','hover-high'));
+    document.querySelectorAll('textarea').forEach(t => t.value = '');
+    document.getElementById('climaQ').value = '';
+    document.querySelectorAll('.error-msg').forEach(e => e.classList.remove('show'));
+    updateProgress(1); showStep(1);
+  }
+</script>
+</body>
+</html>
