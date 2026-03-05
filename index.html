@@ -166,20 +166,7 @@
 </head>
 <body>
 
-<!-- TELA DE SENHA -->
-<div id="passwordScreen">
-  <div class="password-box">
-    <span class="lock-icon">🔐</span>
-    <h2>Acesso Restrito</h2>
-    <p>Este formulário é exclusivo para colaboradores.<br>Digite a senha para continuar.</p>
-    <input type="password" id="passwordInput" placeholder="••••••••••••" onkeydown="if(event.key==='Enter') checkPassword()" autofocus />
-    <div class="password-error" id="passwordError">&nbsp;</div>
-    <button class="btn-unlock" onclick="checkPassword()">Entrar →</button>
-  </div>
-</div>
-
 <!-- APP PRINCIPAL -->
-<div id="mainApp">
 <div class="container">
 
   <div class="header">
@@ -309,25 +296,8 @@
   </div>
 
 </div>
-</div>
 
 <script>
-  // SENHA
-  function checkPassword() {
-    const val = document.getElementById('passwordInput').value;
-    const input = document.getElementById('passwordInput');
-    const err = document.getElementById('passwordError');
-    if (val === 'eqtlstcgyn26') {
-      document.getElementById('passwordScreen').style.display = 'none';
-      document.getElementById('mainApp').style.display = 'block';
-    } else {
-      err.textContent = 'Senha incorreta. Tente novamente.';
-      input.classList.add('shake');
-      input.value = '';
-      setTimeout(() => input.classList.remove('shake'), 500);
-    }
-  }
-
   // LÍDERES
   const leaders = [
     "Flavio Oliveira Duarte",
