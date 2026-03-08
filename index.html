@@ -269,19 +269,22 @@
       <h2>Conte-nos mais</h2>
       <div class="question-group">
         <label class="question-label">✅ O que este líder faz muito bem? Quais são seus maiores pontos fortes?</label>
-        <textarea rows="4" id="pontosFortesQ" placeholder="Descreva os comportamentos e atitudes que você mais admira..."></textarea>
+        <textarea rows="4" id="pontosFortesQ" oninput="document.getElementById('pontosFortesErr').classList.remove('show')" placeholder="Descreva os comportamentos e atitudes que você mais admira..."></textarea>
+        <div class="err-msg" id="pontosFortesErr">Este campo e obrigatorio.</div>
       </div>
       <div class="question-group">
         <label class="question-label">🔧 O que poderia ser melhorado? Que mudanças fariam diferença para a equipe?</label>
-        <textarea rows="4" id="melhoriaQ" placeholder="Seja específico(a) e construtivo(a). Seu feedback é valioso..."></textarea>
+        <textarea rows="4" id="melhoriaQ" oninput="document.getElementById('melhoriaErr').classList.remove('show')" placeholder="Seja específico(a) e construtivo(a). Seu feedback é valioso..."></textarea>
+        <div class="err-msg" id="melhoriaErr">Este campo e obrigatorio.</div>
       </div>
       <div class="question-group">
         <label class="question-label">💡 Se você pudesse dar um conselho a este líder, qual seria?</label>
-        <textarea rows="3" id="conselhoQ" placeholder="Um conselho honesto e direto..."></textarea>
+        <textarea rows="3" id="conselhoQ" oninput="document.getElementById('conselhoErr').classList.remove('show')" placeholder="Um conselho honesto e direto..."></textarea>
+        <div class="err-msg" id="conselhoErr">Este campo e obrigatorio.</div>
       </div>
       <div class="question-group" style="margin-bottom:0">
         <label class="question-label">📊 Como você classificaria o clima da equipe sob esta liderança?</label>
-        <select id="climaQ">
+        <select id="climaQ" onchange="document.getElementById('errClima').classList.remove('show')">
           <option value="" disabled selected>Selecione uma opção...</option>
           <option value="excelente">🌟 Excelente — ambiente muito positivo e motivador</option>
           <option value="bom">👍 Bom — clima agradável, com pontos a melhorar</option>
@@ -435,7 +438,16 @@
 
   async function submitForm() {
     const clima = document.getElementById('climaQ').value;
-    if (!clima) { document.getElementById('errClima').classList.add('show'); return; }
+    const pontosFortes = document.getElementById('pontosFortesQ').value.trim();
+    const melhoria = document.getElementById('melhoriaQ').value.trim();
+    const conselho = document.getElementById('conselhoQ').value.trim();
+
+    let valid = true;
+    if (!clima) { document.getElementById('errClima').classList.add('show'); valid = false; }
+    if (!pontosFortes) { document.getElementById('pontosFortesErr').classList.add('show'); valid = false; }
+    if (!melhoria) { document.getElementById('melhoriaErr').classList.add('show'); valid = false; }
+    if (!conselho) { document.getElementById('conselhoErr').classList.add('show'); valid = false; }
+    if (!valid) return;
     const btn = document.getElementById('submitBtn');
     btn.disabled = true; btn.textContent = 'Enviando...';
     const climaLabels = { excelente: 'Excelente', bom: 'Bom', neutro: 'Neutro', ruim: 'Ruim', critico: 'Crítico' };
@@ -448,24 +460,38 @@
       Desenvolvimento_da_Equipe: ratings.desenvolvimento + ' / 5',
       Tomada_de_Decisao: ratings.decisao + ' / 5',
       NPS_de_Lideranca: selectedNps + ' / 10',
-      Pontos_Fortes: document.getElementById('pontosFortesQ').value || '(não respondido)',
-      Pontos_de_Melhoria: document.getElementById('melhoriaQ').value || '(não respondido)',
-      Conselho_ao_Lider: document.getElementById('conselhoQ').value || '(não respondido)',
+      Pontos_Fortes: pontosFortes,
+      Pontos_de_Melhoria: melhoria,
+      Conselho_ao_Lider: conselho,
       Clima_da_Equipe: climaLabels[clima],
       Data_Hora: new Date().toLocaleString('pt-BR')
     };
-    try {
-      const res = await fetch('https://formspree.io/f/meerjraj', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      if (res.ok) { updateProgress('success'); showStep('Success'); }
-      else throw new Error();
-    } catch {
-      btn.disabled = false; btn.textContent = 'Enviar Avaliação ✓';
-      alert('Erro ao enviar. Verifique sua conexão e tente novamente.');
-    }
+    const ENDPOINTS = [
+        'https://formspree.io/f/meerjraj',
+        'https://formspree.io/f/xgonvgpv',
+        'https://formspree.io/f/xpqywvoq',
+        'https://formspree.io/f/xdawkqpy'
+      ];
+      let enviado = false;
+      for (const endpoint of ENDPOINTS) {
+        try {
+          const res = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          if (res.ok) { enviado = true; break; }
+          // 402 = limit reached, 429 = too many requests — try next endpoint
+          if (res.status === 402 || res.status === 429) continue;
+          // Other error — stop
+          break;
+        } catch { continue; }
+      }
+      if (enviado) { updateProgress('success'); showStep('Success'); }
+      else {
+        btn.disabled = false; btn.textContent = 'Enviar Avaliacao';
+        alert('Erro ao enviar. Verifique sua conexao e tente novamente.');
+      }
   }
 
   function restart() {
@@ -481,4 +507,4 @@
   }
 </script>
 </body>
-</html> 
+</html>
